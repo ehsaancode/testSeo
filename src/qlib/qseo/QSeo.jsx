@@ -8,76 +8,14 @@ const QSeo = ({
     page_description,
     page_image,
     page_keyword,
+    canonical_url,
 }) => {
     const metaTagsRef = useRef([]);
 
     useEffect(() => {
-        // Cleanup previous tags
-        metaTagsRef.current.forEach((tag) => {
-            if (tag && tag.parentNode) {
-                tag.parentNode.removeChild(tag);
-            }
-        });
-        metaTagsRef.current = [];
-
-        // Update Title
-        if (page_title) {
-            document.title = page_title;
-        }
-
-        const head = document.head;
-        const tagsToInsert = [];
-
-        const createMeta = (name, content, attrName = "name") => {
-            if (content) {
-                const meta = document.createElement("meta");
-                meta.setAttribute(attrName, name);
-                meta.setAttribute("content", content);
-                tagsToInsert.push(meta);
-            }
-        };
-
-        const createLink = (rel, href) => {
-            if (href) {
-                const link = document.createElement("link");
-                link.setAttribute("rel", rel);
-                link.setAttribute("href", href);
-                tagsToInsert.push(link);
-            }
-        };
-
-        // Standard QSeo
-        createMeta("description", page_description);
-        createMeta("keywords", page_keyword);
-        createLink("icon", page_favicon);
-
-        // Open Graph / Facebook
-        createMeta("og:type", "website", "property");
-        createMeta("og:image", page_image, "property");
-        createMeta("og:site_name", site_name, "property");
-
-        // Original logic had both page_name and page_title mapping to og:title
-        //if (page_name) createMeta("og:title", page_name, "property");
-        if (page_title) createMeta("og:title", page_title, "property");
-
-        createMeta("og:description", page_description, "property");
-
-        // Twitter
-        createMeta("twitter:card", "summary_large_image");
-        createMeta("twitter:title", page_title);
-        createMeta("twitter:description", page_description);
-        createMeta("twitter:image", page_image);
-
-        // Insert at the top of head
-        // insert before the first child
-        const firstChild = head.firstChild;
-        tagsToInsert.forEach((tag) => {
-            head.insertBefore(tag, firstChild);
-            metaTagsRef.current.push(tag);
-        });
-
-        // Cleanup function for unmount
-        return () => {
+        // Cleanup function: Only remove tags that were dynamically created
+        // We do NOT remove tags that were found existing (static tags)
+        const cleanup = () => {
             metaTagsRef.current.forEach((tag) => {
                 if (tag && tag.parentNode) {
                     tag.parentNode.removeChild(tag);
@@ -85,6 +23,147 @@ const QSeo = ({
             });
             metaTagsRef.current = [];
         };
+
+        cleanup(); // Cleanup previous effect's tags if any (though usually runs on unmount/update)
+
+        // Update Title
+        if (page_title) {
+            document.title = page_title;
+        }
+
+        const head = document.head;
+
+        // Helper to update or create meta tags
+        const updateOrCreateMeta = (selector, content, createFn) => {
+            if (!content) return;
+
+            let element = document.querySelector(selector);
+            if (element) {
+                // If exists, just update content. Do NOT add to metaTagsRef so we don't remove it.
+                element.setAttribute("content", content);
+            } else {
+                // If not exists, create and track it
+                element = createFn();
+                if (element) {
+                    head.insertBefore(element, head.firstChild);
+                    metaTagsRef.current.push(element);
+                }
+            }
+        };
+
+        // Helper for link tags (href instead of content)
+        const updateOrCreateLink = (selector, href, rel) => {
+            if (!href) return;
+
+            let element = document.querySelector(selector);
+            if (element) {
+                element.setAttribute("href", href);
+            } else {
+                element = document.createElement("link");
+                element.setAttribute("rel", rel);
+                element.setAttribute("href", href);
+                head.insertBefore(element, head.firstChild);
+                metaTagsRef.current.push(element);
+            }
+        };
+
+        // Standard QSeo
+        updateOrCreateMeta('meta[name="description"]', page_description, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "description");
+            meta.setAttribute("content", page_description);
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[name="keywords"]', page_keyword, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "keywords");
+            meta.setAttribute("content", page_keyword);
+            return meta;
+        });
+
+        updateOrCreateLink('link[rel="icon"]', page_favicon, "icon");
+
+        // Open Graph / Facebook
+        updateOrCreateMeta('meta[property="og:type"]', "website", () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("property", "og:type");
+            meta.setAttribute("content", "website");
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[property="og:image"]', page_image, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("property", "og:image");
+            meta.setAttribute("content", page_image);
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[property="og:site_name"]', site_name, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("property", "og:site_name");
+            meta.setAttribute("content", site_name);
+            return meta;
+        });
+
+        if (page_title) {
+            updateOrCreateMeta('meta[property="og:title"]', page_title, () => {
+                const meta = document.createElement("meta");
+                meta.setAttribute("property", "og:title");
+                meta.setAttribute("content", page_title);
+                return meta;
+            });
+        }
+
+        updateOrCreateMeta('meta[property="og:description"]', page_description, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("property", "og:description");
+            meta.setAttribute("content", page_description);
+            return meta;
+        });
+
+        // Canonical & OG URL
+        if (canonical_url) {
+            updateOrCreateMeta('meta[property="og:url"]', canonical_url, () => {
+                const meta = document.createElement("meta");
+                meta.setAttribute("property", "og:url");
+                meta.setAttribute("content", canonical_url);
+                return meta;
+            });
+
+            updateOrCreateLink('link[rel="canonical"]', canonical_url, "canonical");
+        }
+
+        // Twitter
+        updateOrCreateMeta('meta[name="twitter:card"]', "summary_large_image", () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "twitter:card");
+            meta.setAttribute("content", "summary_large_image");
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[name="twitter:title"]', page_title, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "twitter:title");
+            meta.setAttribute("content", page_title);
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[name="twitter:description"]', page_description, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "twitter:description");
+            meta.setAttribute("content", page_description);
+            return meta;
+        });
+
+        updateOrCreateMeta('meta[name="twitter:image"]', page_image, () => {
+            const meta = document.createElement("meta");
+            meta.setAttribute("name", "twitter:image");
+            meta.setAttribute("content", page_image);
+            return meta;
+        });
+
+        return cleanup;
     }, [
         site_name,
         page_favicon,
@@ -93,6 +172,7 @@ const QSeo = ({
         page_description,
         page_image,
         page_keyword,
+        canonical_url,
     ]);
 
     return null;

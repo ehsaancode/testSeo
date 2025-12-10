@@ -53,13 +53,13 @@ try {
         `<meta name="twitter:title" content="${homeSeo.page_title || ''}" />`,
         `<meta name="twitter:description" content="${homeSeo.page_description || ''}" />`,
         `<meta name="twitter:image" content="${homeSeo.page_image || ''}" />`,
-        `<!-- End Injected SEO Tags -->`
+        `<!-- End Injected SEO Tagssssssssss -->`
     ].join('\n    ');
 
     // Inject into <head>
     if (indexHtml.includes('<!-- Injected SEO Tags -->')) {
         console.log('Replacing existing injected tags...');
-        indexHtml = indexHtml.replace(/<!-- Injected SEO Tags -->[\s\S]*?<!-- End Injected SEO Tags -->/, metaTags);
+        indexHtml = indexHtml.replace(/<!-- Injected SEO Tags -->[\s\S]*?<!-- End Injected SEO Tagssssss -->/, metaTags);
     } else {
         console.log('Inserting new tags before </head>...');
         indexHtml = indexHtml.replace('</head>', `${metaTags}\n  </head>`);
