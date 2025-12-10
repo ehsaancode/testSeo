@@ -4,3 +4,9 @@ Sitemap: https://staging.cmsexport.react.redoq.host/3345/sitemap.xml
 User-agent: *
 Allow: /
 Sitemap: https://staging.cmsexport.react.redoq.host/3345/sitemap.xml
+User-agent: *
+Allow: /
+Sitemap: https://staging.cmsexport.react.redoq.host/3345/sitemap.xml
+User-agent: *
+Allow: /
+Sitemap: https://staging.cmsexport.react.redoq.host/3345/sitemap.xml

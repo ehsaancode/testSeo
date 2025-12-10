@@ -40,9 +40,11 @@ const QSeo = ({
             let element = document.querySelector(selector);
             if (element) {
                 // If exists, just update content. Do NOT add to metaTagsRef so we don't remove it.
+                console.log(`QSeo: Found existing ${selector}, updating content.`);
                 element.setAttribute("content", content);
             } else {
                 // If not exists, create and track it
+                console.log(`QSeo: Creating new ${selector}.`);
                 element = createFn();
                 if (element) {
                     head.insertBefore(element, head.firstChild);
